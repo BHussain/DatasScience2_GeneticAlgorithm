@@ -1,9 +1,9 @@
 package main;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+
 
 import models.Individual;
 
@@ -95,9 +95,13 @@ public class Client {
     }
 
     /**
-     * Select two individuals out of the population to become parents
+     * Given a list of individuals determine which two can be parents. Calculates probability
+     * to be chosen based on the roulette wheel selection method. 
+     * 
+     * @param population
+     * @return Individual[], an array containing a pair of Individuals acting as parents
      */
-    public static List<Individual> getTwoParents(List<Individual> population) {
+    public static Individual[] getTwoParents(List<Individual> population) {
         double totalFitness = 0;
 
         /**calculate total fitness*/
@@ -110,6 +114,7 @@ public class Client {
             ind.setProbability(ind.getFitness() / totalFitness);
         }
 
+        /**Set the cumulative probability */
         double value = 0.0;
         for (Individual ind : population) {
             ind.setCumalativeProbability(value + ind.getProbability());
@@ -124,40 +129,201 @@ public class Client {
                 result.add(newParent);
             }
         }
-
-        return result;
+        
+        Individual[] parents = new Individual[2];
+        for(int i=0;i<result.size();i++){
+        	parents[i] = result.get(i);
+        	
+        }
+        
+        return parents;
     }
 
+    /**
+     * Given a population select an individual to be a parent.
+     * 
+     * @param population
+     * @return Individual, the parent
+     */
     private static Individual getParent(List<Individual> population){
         Random rand = new Random();
         double selectionValue = rand.nextDouble();
 
-        System.out.println("----- Starting parent selection -----");
-        System.out.println("Random value: "+selectionValue+"\n");
         for (int i = 0; i < population.size(); i++) {
             if (population.get(i).getCumalativeProbability() <= selectionValue
                     && population.get(i + 1).getCumalativeProbability() >= selectionValue) {
-                System.out.println("Current  : " + population.get(i));
-                System.out.println("Next     : " + population.get(i + 1));
-                System.out.println("Selected : " + population.get(i + 1)+"\n");
                 return population.get(i + 1);
             } else if (population.get(i).getCumalativeProbability() >= selectionValue) {
-                System.out.println("Current  : " + population.get(i));
-                System.out.println("Next     : " + population.get(i + 1));
-                System.out.println("Selected : " + population.get(i)+"\n");
                 return population.get(i);
             }
         }
         return null;
     }
+    
+    /**
+     * Create two new Individuals based on the given pair of individuals.
+     * This is done with a two point crossover procedure.
+     * 
+     * @param parents
+     * @return Individual[], the new pair of individuals.
+     */
+    public static Individual[] getChildren(Individual[] parents){
+    	int[] firstBinary = parents[0].getBinaryInt();
+    	int[] secondBinary = parents[1].getBinaryInt();
+    	
+    	int[] firstChildBinary = new int[5];
+    	
+    	firstChildBinary[0] = secondBinary[0];
+    	firstChildBinary[1] = firstBinary[1];
+    	firstChildBinary[2] = firstBinary[2];
+    	firstChildBinary[3] = firstBinary[3];
+    	firstChildBinary[4] = secondBinary[4];
+    	
+    	int[] secondChildBinary = new int[5];
+    	
+    	secondChildBinary[0] = firstBinary[0];
+    	secondChildBinary[1] = secondBinary[1];
+    	secondChildBinary[2] = secondBinary[2];
+    	secondChildBinary[3] = secondBinary[3];
+    	secondChildBinary[4] = firstBinary[4];
+    	
+    	Individual firstChild = new Individual(firstChildBinary);
+    	Individual secondChild = new Individual(secondChildBinary);
+    	
+    	Individual[] children = new Individual[2];
+    	children[0] = firstChild;
+    	children[1] = secondChild;
+    	return children;
+    }
 
+    /**
+     * Mutates an individual. Take a random value from the original and flip it.
+     * I.E 0 ->1 and 1 ->0. This is done twice.
+     * @param ind
+     * @return Individual, the mutated individual
+     */
+    public static Individual mutate(Individual ind){
+    	Random rand = new Random();
+    	
+    	int[] genes = ind.getBinaryInt();
+    	int mutationValue = 2;
+    	
+    	while(mutationValue>0){
+    		int gene = rand.nextInt(5);
+    		if(genes[gene]==0){
+        		genes[gene] = 1;
+        	}else{
+        		genes[gene] = 0;
+        	}
+    		mutationValue --;
+    	}
+
+    	Individual mutant = new Individual(genes);
+    	return mutant;
+    }
+    
+    /**
+     * Given a list of individuals looks up the individual with the highest fitness value.
+     * @param population
+     * @return individual, the fittest
+     */
+    public static Individual getFittest(List<Individual> population){
+    	boolean first = true;
+    	Individual fittest = null;
+    	
+    	for(Individual ind:population){
+    		if(first == true){
+    			fittest = ind;
+    			first = false;
+    		} else if(ind.getFitness()>fittest.getFitness()){
+    			fittest = ind;
+    		}    		
+    	}
+    	return fittest;
+    }
+    
+    /**
+     * Performs a genetic algortim with the following parameters.
+     * 
+     * @param crossOverRate, double, value between 0 and 1
+     * @param mutationRate, double value between 0 and 1
+     * @param elitism, boolean, whether or not the best individual should be retained through the loops.
+     * @param populationSize, int, the size of the population
+     * @param amountOfRuns, the amount of repetitions
+     * 
+     * @return List<Individual>, the final population
+     */
+    public static List<Individual> run(double crossOverRate, double mutationRate, boolean elitism,  
+    		int populationSize,int amountOfRuns){
+    	
+    	Random rand = new Random();
+    	
+    	/**Generate the first population */
+    	List<Individual> population = initPopulation(populationSize);
+    	
+    	while(amountOfRuns>0){
+    		/**Compute the fitness of every individual */
+    		population = computePopulationFitness(population);
+    		  		
+    		/**Apply elitism*/
+    		Individual fittest = null;
+    		if(elitism == true){
+    			fittest = getFittest(population);
+    		}
+    		
+    		/**Select parents */
+    		Individual[] parents = getTwoParents(population);
+    		
+    		/**Perform crossover and mutation */
+    		Individual[] children = null;
+    		
+    		if(rand.nextDouble()<crossOverRate){
+    			children = getChildren(parents); 
+    		}
+    		
+    		if(children!=null){
+    			for(int i=0; i<children.length;i++){
+    				if(rand.nextDouble()<mutationRate){
+        				children[i] = mutate(children[i]);
+        			}
+    			}
+    		}
+    		
+    		/**Add the individuals to be preserved */
+    		List<Individual> newPop = new ArrayList<>();
+    		if(fittest!=null){
+    			newPop.add(fittest);
+    		}
+    		if(children!=null){
+    			for(Individual ind:children){
+    				newPop.add(ind);
+    			}
+    		}
+    		
+    		while(newPop.size()<populationSize){
+    			newPop.add(createIndividual());
+    		}
+    		population = newPop;
+    		amountOfRuns--;
+    	}
+    	
+    	List<Individual> result = computePopulationFitness(population);
+    	return result;
+    }
+    
     public static void main(String[] args) {
-        List<Individual> population = initPopulation(10);
-        population = computePopulationFitness(population);
-        population = getTwoParents(population);
-        System.out.println("Selected parents:");
-        for (Individual ind : population) {
-            System.out.println(ind.toString());
-        }
+    	List<Individual> population = run(1,1,true,50,200);
+    	double totalFitness = 0.0;
+    	for(Individual ind:population){
+    		totalFitness += ind.getFitness();
+    	}
+    	double averageFitness = totalFitness/population.size();
+    	Individual fittest = getFittest(population);
+    	double highestFitness = fittest.getFitness();
+    	
+    	System.out.println("The average fitness: " + averageFitness +"\n"
+    				+ "The higest fitness: " + highestFitness+ "\n"
+    				+ "The fittest individual: " + fittest.toString()
+    			);
     }
 }
