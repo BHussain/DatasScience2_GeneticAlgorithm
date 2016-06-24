@@ -165,8 +165,8 @@ public class GeneticAlgorithm {
      */
     private List<Individual> computePopulationFitness(List<Individual> population) {
         for (Individual ind : population) {
-            double input = binaryStringToNumber(binaryIntToString(ind.getBinaryInt())) * -1;
-            double solution = (Math.pow(input, 2) + (7 * (input * -1)));
+            double input = binaryStringToNumber(binaryIntToString(ind.getBinaryInt()));
+            double solution = (Math.pow(input, 2) * -1) + (7 * input);
             ind.setFitness(solution);
         }
         return population;

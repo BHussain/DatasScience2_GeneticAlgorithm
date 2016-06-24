@@ -4,7 +4,7 @@ public class Individual {
     private double fitness;
     private int[] binaryInt;
     private double probability;
-    private double cumalativeProbability;
+    private double cumulativeProbability;
 
     public Individual(int[] binaryInt) {
         this.binaryInt = binaryInt;
@@ -35,11 +35,11 @@ public class Individual {
     }
 
     public double getCumulativeProbability() {
-        return cumalativeProbability;
+        return cumulativeProbability;
     }
 
     public void setCumulativeProbability(double cumalativeProbability) {
-        this.cumalativeProbability = cumalativeProbability;
+        this.cumulativeProbability = cumalativeProbability;
     }
 
     public String toString() {
@@ -47,7 +47,7 @@ public class Individual {
         for (int value : binaryInt) {
             output += value;
         }
-        return output + ", fitness: " + this.fitness + ", probability: " + this.getProbability()
-                + ", cumulative probability: " + this.cumalativeProbability;
+        return output + ", fitness: " + this.fitness + ", probability: " + this.probability
+                + ", cumulative probability: " + this.cumulativeProbability;
     }
 }
