@@ -7,7 +7,7 @@ import models.Individual;
 
 public class Client {
     public static void main(String[] args) {
-        GeneticAlgorithm geneticAlgorithm = new GeneticAlgorithm(0.7, 0.5, true, 50, 500);
+        GeneticAlgorithm geneticAlgorithm = new GeneticAlgorithm(0.85, 0.01, true, 10, 50);
         List<Individual> population = geneticAlgorithm.run();
 
         double totalFitness = 0.0;

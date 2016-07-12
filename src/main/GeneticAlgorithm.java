@@ -10,6 +10,7 @@ public class GeneticAlgorithm {
     private boolean elitism;
     private int populationSize;
     private int amountOfRuns;
+    private static Random rand = new Random();
 
     /**
      * Initialize the values needed to run the genetic algorithm.
@@ -45,9 +46,22 @@ public class GeneticAlgorithm {
             population = computePopulationFitness(population);
 
             /** Apply elitism*/
-            Individual fittest = null;
+            List<Individual> fittestList = new ArrayList<>();
+            
+            List<Individual> evalPop = new ArrayList<>();
+            for(Individual ind:population){
+            	evalPop.add(ind);
+            }
+            
             if (elitism) {
-                fittest = getFittest(population);
+            	int elitismValue = 1;
+                
+                while(elitismValue!=0){
+                	Individual ind = getFittest(population);
+                	fittestList.add(ind);
+                	evalPop.remove(ind);
+                	elitismValue--;
+                }
             }
 
             /** Select parents */
@@ -70,21 +84,47 @@ public class GeneticAlgorithm {
 
             /** Add the individuals to be preserved */
             List<Individual> newPop = new ArrayList<>();
-            if (fittest != null) {
-                newPop.add(fittest);
+
+            if(!fittestList.isEmpty()){
+            	for(Individual ind: fittestList){
+            		newPop.add(ind);
+            	}
             }
             if (children != null) {
                 Collections.addAll(newPop, children);
             }
 
             while (newPop.size() < populationSize) {
-                newPop.add(createIndividual());
+                //newPop.add(createIndividual());
+            	addChildren(population,newPop);
             }
             population = newPop;
             amountOfRuns--;
         }
 
         return computePopulationFitness(population);
+    }
+    
+    private void addChildren(List<Individual> population,List<Individual> pop){
+    	/** Select parents */
+        Individual[] parents = getTwoParents(population);
+
+        /** Perform crossover and mutation */
+        Individual[] children = null;
+
+        if (rand.nextDouble() < crossOverRate) {
+            children = getChildren(parents);
+        }
+
+        if (children != null) {
+            for (int i = 0; i < children.length; i++) {
+                if (rand.nextDouble() < mutationRate) {
+                    children[i] = mutate(children[i]);
+                }
+            }
+            Collections.addAll(pop, children);
+        }
+  
     }
 
     /**
@@ -181,15 +221,31 @@ public class GeneticAlgorithm {
      */
     private Individual[] getTwoParents(List<Individual> population) {
         double totalFitness = 0;
+        
+        /**Scale the fitness up*/
+        double lowest = 100;
+        for(Individual ind: population){
+        	if(ind.getFitness()<lowest){
+        		lowest = ind.getFitness();
+        	}
+        }
+        
+        if(lowest<0){
+        	lowest= lowest*-1;
+        }
+        
+        for(Individual ind:population){
+        	ind.setScaledFitness(ind.getFitness()+lowest);
+        }
 
         /** calculate total fitness*/
         for (Individual ind : population) {
-            totalFitness += ind.getFitness();
+            totalFitness += ind.getScaledFitness();
         }
 
         /** calculate the probability to be selected for every individual*/
         for (Individual ind : population) {
-            ind.setProbability(ind.getFitness() / totalFitness);
+            ind.setProbability(ind.getScaledFitness() / totalFitness);
         }
 
         /** Set the cumulative probability */
@@ -203,7 +259,7 @@ public class GeneticAlgorithm {
 
         while (result.size() < 2) {
             Individual newParent = getParent(population);
-            if (newParent != null && !result.contains(newParent)) {
+            if (newParent != null) { // && !result.contains(newParent)) {
                 result.add(newParent);
             }
         }
@@ -224,7 +280,7 @@ public class GeneticAlgorithm {
      * @return Individual, the parent
      */
     private Individual getParent(List<Individual> population) {
-        Random rand = new Random();
+        
         double selectionValue = rand.nextDouble();
 
         for (int i = 0; i < population.size(); i++) {
@@ -235,6 +291,7 @@ public class GeneticAlgorithm {
                 return population.get(i);
             }
         }
+        System.out.println("I am here, this is strange");
         return null;
     }
 

@@ -2,6 +2,7 @@ package models;
 
 public class Individual {
     private double fitness;
+    private double scaledFitness;
     private int[] binaryInt;
     private double probability;
     private double cumulativeProbability;
@@ -41,6 +42,14 @@ public class Individual {
     public void setCumulativeProbability(double cumalativeProbability) {
         this.cumulativeProbability = cumalativeProbability;
     }
+    
+    public double getScaledFitness() {
+		return scaledFitness;
+	}
+
+	public void setScaledFitness(double scaledFitness) {
+		this.scaledFitness = scaledFitness;
+	}
 
     public String toString() {
         String output = "Binary number: ";
@@ -50,4 +59,5 @@ public class Individual {
         return output + ", fitness: " + this.fitness + ", probability: " + this.probability
                 + ", cumulative probability: " + this.cumulativeProbability;
     }
+
 }
